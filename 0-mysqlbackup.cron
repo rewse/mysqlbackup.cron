@@ -1,34 +1,24 @@
 #!/bin/sh
 
-# Password for root
-PASSWORD=PASSWORD
+# Password for MySQL root
+password=
 
-# Saved binlog in days
-SAVED_BINLOG=7
-
-MYSQL_DATA_DIR='/var/lib/mysql'
-BINLOG_DIR="$MYSQL_DATA_DIR/binlog"
-BACKUP_DIR="$MYSQL_DATA_DIR/bak"
+mysql_data_dir='/var/lib/mysql'
+binlog_dir="$mysql_data_dir/binlog"
+backup_dir="$mysql_data_dir/bak"
 
 mysqldump \
 --user=root \
---password=$PASSWORD \
+--password=$password \
 --lock-all-tables \
 --flush-logs \
 --default-character-set=utf8 \
 --all-databases \
-> $BACKUP_DIR/mysql.dump.new
+> $backup_dir/mysql.dump.new
 
 if [ $? != 0 ]; then
   echo "[ERROR] mysqldump was failed." 1>&2
   exit 1
 fi
 
-mv -f $BACKUP_DIR/mysql.dump.new $BACKUP_DIR/mysql.dump
-
-find "$BINLOG_DIR" -mtime +$SAVED_BINLOG -print0 | xargs -0 rm -f
-
-ls $BINLOG_DIR -I *.index |
-  sed "s|binlog|$BINLOG_DIR/binlog|g" > $BINLOG_DIR/binlog.index
-chown mysql:mysql $BINLOG_DIR/binlog.index
-chmod 660 $BINLOG_DIR/binlog.index
+mv -f $backup_dir/mysql.dump.new $backup_dir/mysql.dump
