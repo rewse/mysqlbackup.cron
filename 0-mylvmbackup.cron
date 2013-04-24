@@ -1,0 +1,29 @@
+#!/bin/sh
+
+TARGET_DIR=`grep ^backupdir /etc/mylvmbackup.conf | sed 's/backupdir=\(..*\)/\1/'`
+
+mylvmbackup 2>&1 >/dev/null
+
+for DIRNAME in `ls $TARGET_DIR`; do
+  if [ "`echo $DIRNAME | grep INCOMPLETE`" ]; then
+    rm -rf $TARGET_DIR/$DIRNAME
+    logger -p info -t mylvmbackup.cron[$$] Removed $TARGET_DIR/$DIRNAME
+  fi
+done
+
+LAST_SET=`ls $TARGET_DIR | tail -1`
+
+if [ "`echo $LAST_SET | grep ^mylvmbackup-`" == "" ]; then
+  logger -p info -t mylvmbackup.cron[$$] Not found the last backup set
+  exit 1
+fi
+
+for DIRNAME in `ls $TARGET_DIR`; do
+  if [ \
+    "`echo $DIRNAME | grep ^mylvmbackup-`" != "" \
+    -a $DIRNAME != $LAST_SET \
+  ]; then
+    rm -rf $TARGET_DIR/$DIRNAME
+    logger -p info -t mylvmbackup.cron[$$] Removed $TARGET_DIR/$DIRNAME
+  fi
+done
